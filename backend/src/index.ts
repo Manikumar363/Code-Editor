@@ -3,6 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import Docker from 'dockerode';
 import { v4 as uuidv4 } from 'uuid';
+import { runCode } from './controllers/codeController';
 
 const app = express();
 const docker = new Docker();
@@ -33,7 +34,7 @@ const cleanupContainers = async () => {
       try {
         console.log(`Stopping and removing idle container ${id}`);
         if (container) {
-            await (container as Docker.Container).stop({ t: 5 });
+            await (container as Docker.Container).stop({ t: 5 as number });
             await (container as Docker.Container).remove();
         }
         activeContainers.delete(id);
@@ -224,7 +225,7 @@ app.post('/run', async (req: Request, res: Response) => {
       try {
         console.log(`Container ${containerId} stream ended.`);
         if (containerId && container) {
-          await container.stop({ t: 1 });
+          await container.stop({ t: 1 as number });
           await container.remove();
         }
       } catch (err) {
@@ -241,7 +242,7 @@ app.post('/run', async (req: Request, res: Response) => {
       console.error(`Error on container ${containerId} stream:`, err);
       try {
         if (containerId && container) {
-          await container.stop({ t: 1 }).catch(() => {});
+          await container.stop({ t: 1 as number }).catch(() => {});
           await container.remove().catch(() => {});
         }
       } catch (cleanupErr) {
@@ -265,7 +266,7 @@ app.post('/run', async (req: Request, res: Response) => {
     if (container && containerId && activeContainers.has(containerId)) {
         try {
            console.log(`Attempting cleanup for container ${containerId} after error.`);
-           await container.stop({ t: 1 }).catch(() => {});
+           await container.stop({ t: 1 as number }).catch(() => {});
            await container.remove().catch(() => {});
         } catch(cleanupError) {
             console.error(`Error during error cleanup for container ${containerId}:`, cleanupError);
@@ -276,7 +277,7 @@ app.post('/run', async (req: Request, res: Response) => {
     } else if (container) {
          try {
             console.log('Attempting cleanup for container (not in map) after error.');
-            await container.stop({ t: 1 }).catch(() => {});
+            await container.stop({ t: 1 as number }).catch(() => {});
             await container.remove().catch(() => {});
          } catch(cleanupError) {
             console.error('Error during error cleanup for container (not in map):', cleanupError);
