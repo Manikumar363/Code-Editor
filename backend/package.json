@@ -1,30 +1,27 @@
 {
   "name": "code-editor-backend",
   "version": "1.0.0",
-  "description": "Backend for code editor with Docker integration",
-  "main": "dist/index.js",
+  "description": "Backend server for code editor with Docker execution",
+  "main": "src/index.ts",
   "scripts": {
-    "start": "node dist/index.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start": "ts-node src/index.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon src/index.ts"
   },
   "dependencies": {
-    "body-parser": "^1.20.3",
+    "express": "^4.18.2",
     "cors": "^2.8.5",
-    "dockerode": "^4.0.6",
-    "express": "^4.21.2",
-    "uuid": "^9.0.1"
+    "dockerode": "^3.3.5",
+    "body-parser": "^1.20.2",
+    "uuid": "^9.0.0",
+    "@types/express": "^4.17.17",
+    "@types/cors": "^2.8.13",
+    "@types/node": "^18.15.11",
+    "@types/uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@types/body-parser": "^1.19.5",
-    "@types/cors": "^2.8.18",
-    "@types/dockerode": "^3.3.39",
-    "@types/express": "^4.17.22",
-    "@types/node": "^18.19.110",
-    "@types/uuid": "^9.0.8",
-    "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.0.4",
+    "ts-node": "^10.9.1",
+    "nodemon": "^2.0.22"
   }
 }
