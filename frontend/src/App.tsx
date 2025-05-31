@@ -264,7 +264,7 @@ function App() {
       setError(null);
       setLoading(true);
 
-      const response = await axios.post(`${API_URL}/api/run`, {
+      const response = await axios.post(`${API_URL}/run`, {
         code,
         input: input,
         language: 'python'
