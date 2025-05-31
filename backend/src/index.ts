@@ -32,8 +32,10 @@ const cleanupContainers = async () => {
     if (now - startTime > IDLE_TIMEOUT) {
       try {
         console.log(`Stopping and removing idle container ${id}`);
-        await container.stop({ t: 5 });
-        await container.remove();
+        if (container) {
+            await (container as Docker.Container).stop({ t: 5 });
+            await (container as Docker.Container).remove();
+        }
         activeContainers.delete(id);
         console.log(`Cleaned up idle container ${id}`);
       } catch (error) {
@@ -47,7 +49,7 @@ const cleanupContainers = async () => {
 setInterval(cleanupContainers, 5 * 60 * 1000);
 
 // Main /run route
-app.post('/run', async (req, res) => {
+app.post('/run', async (req: express.Request, res: express.Response) => {
   console.log('Received /run request');
   const { code, input, containerId: existingContainerId } = req.body;
 
@@ -65,84 +67,82 @@ app.post('/run', async (req, res) => {
         return res.status(404).json({ error: 'Container not found or stream not available' });
       }
 
-      container = containerObj.container;
+      container = containerObj.container as Docker.Container;
       stream = containerObj.stream;
       containerId = existingContainerId;
 
       if (input !== undefined) {
         console.log('Writing input to container stream:', input);
         
-        // Re-attach specifically for stdin to ensure clean writing
-        if (!container) {
-             console.error('Container is undefined when attempting to write input.');
-             res.status(500).json({ error: 'Container is not available for writing input' });
-             return;
-        }
         const writeStream = await container.attach({
             stream: true,
             stdin: true,
-            stdout: false, // Don't need stdout/stderr for writing
+            stdout: false,
             stderr: false,
             hijack: true
         });
 
         if (writeStream.writable) {
              writeStream.write(input + '\n');
-             // Close the write stream after writing input
-             // Note: Closing might affect the main stream, need to test
-             // writeStream.end(); // Use end() to signal end of writing
 
         } else {
             console.error('Container stream is not writable.');
              res.status(500).json({ error: 'Container stream is not writable' });
-             // It might be necessary to clean up the container here if the stream is broken
              return;
         }
 
-       // For subsequent inputs, read output from the stream briefly
        let subsequentOutput = '';
        const subsequentOutputPromise = new Promise<string>((resolve, reject) => {
-         const timer = setTimeout(() => resolve(subsequentOutput), 1000);
-         const dataHandler = (chunk: Buffer) => {
-           subsequentOutput += chunk.toString();
-           if (
-             subsequentOutput.includes('Enter first number:') ||
-             subsequentOutput.includes('Enter second number:') ||
-             subsequentOutput.includes('Enter operation') ||
-             subsequentOutput.includes('Result:') ||
-             subsequentOutput.includes('Error:') ||
-             subsequentOutput.includes('finished')
-           ) {
-             clearTimeout(timer);
-             stream.off('data', dataHandler);
-             resolve(subsequentOutput);
-           }
-         };
+          const timer = setTimeout(() => {
+            console.log('Timeout waiting for subsequent output.');
+            resolve(subsequentOutput);
+          }, 1000);
 
-         stream.on('data', dataHandler);
-         stream.on('end', () => {
-           clearTimeout(timer);
-           stream.off('data', dataHandler);
-           resolve(subsequentOutput);
-         });
-         stream.on('error', (err: Error) => {
-           clearTimeout(timer);
-           stream.off('data', dataHandler);
-           reject(err);
-         });
-       });
+          const dataHandler = (chunk: Buffer) => {
+            subsequentOutput += chunk.toString();
+            if (
+              subsequentOutput.includes('Enter first number:') ||
+              subsequentOutput.includes('Enter second number:') ||
+              subsequentOutput.includes('Enter operation') ||
+              subsequentOutput.includes('Result:') ||
+              subsequentOutput.includes('Error:') ||
+              subsequentOutput.includes('finished')
+            ) {
+              console.log('Detected prompt/result in subsequent output.');
+              clearTimeout(timer);
+              stream.off('data', dataHandler);
+              resolve(subsequentOutput);
+            }
+          };
 
-       const outputStr = await subsequentOutputPromise;
-       const requiresInput =
-         outputStr.includes('Enter first number:') ||
-         outputStr.includes('Enter second number:') ||
-         outputStr.includes('Enter operation');
+          stream.on('data', dataHandler);
+          stream.on('end', () => {
+            console.log('Subsequent stream ended during input handling.');
+            clearTimeout(timer);
+            stream.off('data', dataHandler);
+            resolve(subsequentOutput);
+          });
+          stream.on('error', (err: Error) => {
+            console.error('Error on subsequent stream during input handling:', err);
+            clearTimeout(timer);
+            stream.off('data', dataHandler);
+            reject(err);
+          });
+        });
 
-       return res.json({
-         output: outputStr,
-         requiresInput,
-         containerId,
-       });
+        const outputStr = await subsequentOutputPromise;
+        console.log('Subsequent attached output:', outputStr);
+
+        const requiresInput =
+          outputStr.includes('Enter first number:') ||
+          outputStr.includes('Enter second number:') ||
+          outputStr.includes('Enter operation');
+
+        return res.json({
+          output: outputStr,
+          requiresInput: requiresInput,
+          containerId,
+        });
       }
     }
 
@@ -174,7 +174,10 @@ app.post('/run', async (req, res) => {
 
     let initialOutput = '';
     const outputPromise = new Promise<string>((resolve, reject) => {
-      const timer = setTimeout(() => resolve(initialOutput), 1500);
+      const timer = setTimeout(() => {
+         console.log('Timeout waiting for initial output.');
+         resolve(initialOutput);
+      }, 1500);
 
       stream.on('data', (chunk: Buffer) => {
         initialOutput += chunk.toString();
@@ -183,23 +186,28 @@ app.post('/run', async (req, res) => {
           initialOutput.includes('Enter second number:') ||
           initialOutput.includes('Enter operation')
         ) {
+          console.log('Detected input prompt in initial output.');
           clearTimeout(timer);
           resolve(initialOutput);
         }
       });
 
       stream.on('end', () => {
+        console.log('Initial stream ended.');
         clearTimeout(timer);
         resolve(initialOutput);
       });
 
       stream.on('error', (err: Error) => {
+        console.error('Error on initial stream:', err);
         clearTimeout(timer);
         reject(err);
       });
     });
 
     const outputStr = await outputPromise;
+    console.log('Initial attached output:', outputStr);
+
     const requiresInput =
       outputStr.includes('Enter first number:') ||
       outputStr.includes('Enter second number:') ||
@@ -215,7 +223,7 @@ app.post('/run', async (req, res) => {
     stream.on('end', async () => {
       try {
         console.log(`Container ${containerId} stream ended.`);
-        if (container) {
+        if (containerId && container) {
           await container.stop({ t: 1 });
           await container.remove();
         }
@@ -232,7 +240,7 @@ app.post('/run', async (req, res) => {
     stream.on('error', async (err: Error) => {
       console.error(`Error on container ${containerId} stream:`, err);
       try {
-        if (container) {
+        if (containerId && container) {
           await container.stop({ t: 1 }).catch(() => {});
           await container.remove().catch(() => {});
         }
@@ -247,7 +255,7 @@ app.post('/run', async (req, res) => {
     });
 
     container.wait().then((data) => {
-      console.log(`Container ${containerId} exited with status:`, data.StatusCode);
+      console.log(`Container ${containerId} exited with status:`, (data as any).StatusCode);
     }).catch((err: Error) => {
       console.error(`Error waiting for container ${containerId} exit:`, err);
     });
@@ -255,18 +263,29 @@ app.post('/run', async (req, res) => {
   } catch (error) {
     console.error('Error handling /run request:', error);
     if (container && containerId && activeContainers.has(containerId)) {
-      try {
-        console.log(`Attempting cleanup for container ${containerId} after error`);
-        await container.stop({ t: 1 }).catch(() => {});
-        await container.remove().catch(() => {});
-      } catch (cleanupError) {
-        console.error(`Error cleaning up container ${containerId} after exception:`, cleanupError);
-      } finally {
-        activeContainers.delete(containerId);
-        console.log(`Cleaned up container ${containerId} after error`);
-      }
+        try {
+           console.log(`Attempting cleanup for container ${containerId} after error.`);
+           await container.stop({ t: 1 }).catch(() => {});
+           await container.remove().catch(() => {});
+        } catch(cleanupError) {
+            console.error(`Error during error cleanup for container ${containerId}:`, cleanupError);
+        } finally {
+             activeContainers.delete(containerId);
+             console.log(`Cleaned up container ${containerId} after error.`);
+        }
+    } else if (container) {
+         try {
+            console.log('Attempting cleanup for container (not in map) after error.');
+            await container.stop({ t: 1 }).catch(() => {});
+            await container.remove().catch(() => {});
+         } catch(cleanupError) {
+            console.error('Error during error cleanup for container (not in map):', cleanupError);
+         }
     }
-    res.status(500).json({ error: 'Failed to process the request.' });
+    res.status(500).json({
+      error: 'Failed to process the request.',
+      details: error instanceof Error ? error.message : 'Unknown error occurred',
+    });
   }
 });
 
