@@ -140,7 +140,7 @@ const codeTemplates = {
         if num2 == 0:
             print("Error: Division by zero")
         else:
-            print(f"Result: {num1 / num2}")
+        print(f"Result: {num1 / num2}")
     else:
         print("Invalid operation")
     print("Calculator finished")
@@ -151,11 +151,11 @@ calculator()`,
 def guess_number():
     number = random.randint(1, 100)
     attempts = 0
-
+    
     while True:
         guess = int(input("Guess a number between 1 and 100: "))
         attempts += 1
-
+        
         if guess < number:
             print("Too low!")
         elif guess > number:
@@ -318,75 +318,75 @@ function App() {
 
       {/* Use the new styled component for centering and vertical stacking */}
       <MainContentContainer>
-        <EditorContainer>
-          <Editor
-            height="70vh"
-            language={language}
-            theme={theme}
-            value={code}
-            onChange={handleEditorChange}
-            options={{
-              minimap: { enabled: false },
-              fontSize,
-              lineNumbers: showLineNumbers ? 'on' : 'off',
-              roundedSelection: false,
-              scrollBeyondLastLine: false,
-              automaticLayout: true,
+      <EditorContainer>
+        <Editor
+          height="70vh"
+          language={language}
+          theme={theme}
+          value={code}
+          onChange={handleEditorChange}
+          options={{
+            minimap: { enabled: false },
+            fontSize,
+            lineNumbers: showLineNumbers ? 'on' : 'off',
+            roundedSelection: false,
+            scrollBeyondLastLine: false,
+            automaticLayout: true,
+          }}
+        />
+        <ButtonContainer>
+          <Button onClick={runCode}>Run Code</Button>
+          <Button onClick={saveCode}>Save Code</Button>
+          <Button onClick={loadCode}>Load Code</Button>
+          
+          <Select 
+            value={language} 
+            onChange={(e) => setLanguage(e.target.value)}
+          >
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript</option>
+            <option value="java">Java</option>
+          </Select>
+
+          <Select 
+            value={theme} 
+            onChange={(e) => setTheme(e.target.value)}
+          >
+            <option value="vs-dark">Dark Theme</option>
+            <option value="light">Light Theme</option>
+          </Select>
+
+          <Select 
+            onChange={(e) => {
+             const value = e.target.value as TemplateKey;
+              if (value) {
+                setCode(codeTemplates.python[value]);
+              }
             }}
+          >
+            <option value="">Select a template...</option>
+            <option value="Hello World">Hello World</option>
+            <option value="Calculator">Calculator</option>
+            <option value="Simple Game">Simple Game</option>
+          </Select>
+
+          <NumberInput 
+            type="number" 
+            value={fontSize} 
+            onChange={(e) => setFontSize(Number(e.target.value))}
+            min="8"
+            max="24"
           />
-          <ButtonContainer>
-            <Button onClick={runCode}>Run Code</Button>
-            <Button onClick={saveCode}>Save Code</Button>
-            <Button onClick={loadCode}>Load Code</Button>
 
-            <Select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-            >
-              <option value="python">Python</option>
-              <option value="javascript">JavaScript</option>
-              <option value="java">Java</option>
-            </Select>
-
-            <Select
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-            >
-              <option value="vs-dark">Dark Theme</option>
-              <option value="light">Light Theme</option>
-            </Select>
-
-            <Select
-              onChange={(e) => {
-               const value = e.target.value as TemplateKey;
-                if (value) {
-                  setCode(codeTemplates.python[value]);
-                }
-              }}
-            >
-              <option value="">Select a template...</option>
-              <option value="Hello World">Hello World</option>
-              <option value="Calculator">Calculator</option>
-              <option value="Simple Game">Simple Game</option>
-            </Select>
-
-            <NumberInput
-              type="number"
-              value={fontSize}
-              onChange={(e) => setFontSize(Number(e.target.value))}
-              min="8"
-              max="24"
+          <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <input 
+              type="checkbox" 
+              checked={showLineNumbers} 
+              onChange={(e) => setShowLineNumbers(e.target.checked)}
             />
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <input
-                type="checkbox"
-                checked={showLineNumbers}
-                onChange={(e) => setShowLineNumbers(e.target.checked)}
-              />
-              Line Numbers
-            </label>
-          </ButtonContainer>
+            Line Numbers
+          </label>
+        </ButtonContainer>
         </EditorContainer>
 
         <TerminalContainer>
