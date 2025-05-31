@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import Docker from 'dockerode';
@@ -49,7 +49,7 @@ const cleanupContainers = async () => {
 setInterval(cleanupContainers, 5 * 60 * 1000);
 
 // Main /run route
-app.post('/run', async (req: express.Request, res: express.Response) => {
+app.post('/run', async (req: Request, res: Response) => {
   console.log('Received /run request');
   const { code, input, containerId: existingContainerId } = req.body;
 
