@@ -12,7 +12,7 @@ const port = process.env.PORT || 3001;
 // Update CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-vercel-domain.vercel.app', 'http://localhost:3000']
+    ? ['https://code-editor-five-nu.vercel.app', 'http://localhost:3000']
     : 'http://localhost:3000',
   methods: ['GET', 'POST'],
   credentials: true
