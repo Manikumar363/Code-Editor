@@ -1,11 +1,12 @@
+# Dependencies
 node_modules/
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.production
+
+# Build artifacts
 dist/
 build/
-.DS_Store
-*.log
+
+# Environment files
+.env*
+
+# Logs
+*.log 
