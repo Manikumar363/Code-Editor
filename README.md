@@ -1,7 +1,8 @@
 # Web Code Editor with Terminal
 
 This project is a web-based code editor with an integrated terminal, allowing users to write and execute code in a sandboxed environment and view the output.
-![image](https://github.com/user-attachments/assets/1b60df61-649f-4dbd-8d1b-e4c112cec77a)
+![image](https://github.com/user-attachments/assets/730d302a-a8c3-4397-b2b3-52e34a7743f6)
+
 
 ## Features
 
