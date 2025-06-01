@@ -3,7 +3,8 @@
 This project is a web-based code editor with an integrated terminal, allowing users to write and execute code in a sandboxed environment and view the output.
 ![Screenshot (451)](https://github.com/user-attachments/assets/44b9efb7-be84-4aa7-a051-828d65d971af)
 
-
+For a hands-on experience, please see the [live demonstration][demo-link].
+[demo-link]: https://code-editor-manikumar363s-projects.vercel.app/
 
 ## Features
 
