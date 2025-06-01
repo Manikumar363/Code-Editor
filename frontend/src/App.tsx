@@ -140,7 +140,7 @@ const codeTemplates = {
         if num2 == 0:
             print("Error: Division by zero")
         else:
-        print(f"Result: {num1 / num2}")
+            print(f"Result: {num1 / num2}")
     else:
         print("Invalid operation")
     print("Calculator finished")
