@@ -7,7 +7,7 @@ import { runCode } from './controllers/codeController';
 
 const app = express();
 const docker = new Docker();
-const port = process.env.PORT || 3001;
+const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 
 // Update CORS configuration
 app.use(cors({
@@ -37,9 +37,9 @@ const cleanupContainers = async () => {
             await (container as Docker.Container).stop({ t: 5 as number });
             await (container as Docker.Container).remove();
         }
-        activeContainers.delete(id);
+      activeContainers.delete(id);
         console.log(`Cleaned up idle container ${id}`);
-      } catch (error) {
+    } catch (error) {
         console.error(`Error cleaning up idle container ${id}:`, error);
       }
     }
@@ -164,10 +164,10 @@ app.post('/run', async (req: Request, res: Response) => {
     await container.start();
 
     stream = await container.attach({
-      stream: true,
-      stdin: true,
-      stdout: true,
-      stderr: true,
+        stream: true,
+        stdin: true,
+        stdout: true,
+        stderr: true,
       hijack: true,
     });
 
@@ -226,7 +226,7 @@ app.post('/run', async (req: Request, res: Response) => {
         console.log(`Container ${containerId} stream ended.`);
         if (containerId && container) {
           await container.stop({ t: 1 as number });
-          await container.remove();
+        await container.remove();
         }
       } catch (err) {
         console.error(`Error during cleanup for container ${containerId}:`, err);
@@ -291,6 +291,6 @@ app.post('/run', async (req: Request, res: Response) => {
 });
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+app.listen(port,'0.0.0.0', () => {
+  console.log(`Server running on port ${port}`);
 });

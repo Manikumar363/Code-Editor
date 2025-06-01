@@ -258,17 +258,32 @@ function App() {
     return processedOutput;
   };
 
-  const runCode = async () => {
+  const runCode = async (currentInput?: string, currentContainerId?: string | null) => {
     try {
-      setOutput([]);
+      // If it's a new execution (no container ID provided), clear previous output
+      if (!currentContainerId) {
+        setOutput([]);
+      }
       setError(null);
       setLoading(true);
 
-      const response = await axios.post(`${API_URL}/run`, {
+      // Construct the request body
+      const requestBody: any = {
         code,
-        input: input,
-        language: 'python'
-      });
+        language: 'python' // Assuming language is always python for now based on templates
+      };
+
+      // Add input and containerId only if provided (subsequent input)
+      if (currentInput !== undefined) {
+          requestBody.input = currentInput;
+      }
+      if (currentContainerId) {
+          requestBody.containerId = currentContainerId;
+      }
+
+      console.log('Sending request to backend:', requestBody);
+
+      const response = await axios.post(`${API_URL}/run`, requestBody);
 
       console.log('Backend response:', response.data);
 
@@ -276,13 +291,25 @@ function App() {
       if (response.data.output) {
         // Process the raw Docker stream output to remove headers
         const cleanOutput = processDockerStream(String(response.data.output));
+        // Only add non-empty lines
         const outputLines = cleanOutput.split('\n').filter((line: string) => line.length > 0);
-        setOutput(prev => [...prev, ...outputLines]);
+
+        // If it's not the initial run, prepend the user's input line to the output display
+        if (currentContainerId && currentInput !== undefined) {
+             setOutput(prev => [...prev, `> ${currentInput}`, ...outputLines]);
+        } else {
+            setOutput(prev => [...prev, ...outputLines]);
+        }
+
       }
 
       // Update container ID if provided in the response (for initial run)
+      // or if it's the same container ID for subsequent runs
       if (response.data.containerId) {
           setActiveContainerId(response.data.containerId);
+      } else if (currentContainerId && !response.data.requiresInput) {
+           // If no new containerId is returned and no more input is required, clear the active container
+           setActiveContainerId(null);
       }
 
       // Then handle input state based on backend response
@@ -302,10 +329,9 @@ function App() {
 
   const handleInputSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && isWaitingForInput && activeContainerId) {
-      // Show the input in the terminal before sending
-      setOutput(prev => [...prev, `> ${input}`]);
-      runCode();
-      setInput('');
+      // Call runCode with current input and active container ID
+      runCode(input, activeContainerId);
+      setInput(''); // Clear the input field after submission
     }
   };
 
@@ -335,7 +361,7 @@ function App() {
           }}
         />
         <ButtonContainer>
-          <Button onClick={runCode}>Run Code</Button>
+          <Button onClick={() => runCode()}>Run Code</Button>
           <Button onClick={saveCode}>Save Code</Button>
           <Button onClick={loadCode}>Load Code</Button>
           
